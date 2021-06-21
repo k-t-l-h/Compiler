@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/go-echarts/go-echarts/charts"
-	opts "github.com/go-echarts/go-echarts/opts"
+	"github.com/go-echarts/go-echarts/opts"
 	"log"
 )
 
@@ -23,14 +23,14 @@ func (c *Tree) AddSeries(name string, data []opts.TreeData, options ...charts.Se
 type BaseCListener struct{
 	Tree Tree
 	Root opts.TreeData
-	nodes []opts.TreeData
+	nodes []*opts.TreeData
 	current *opts.TreeData
 }
 
 func NewBaseListener() *BaseCListener {
 	l := BaseCListener{
 		Tree: Tree{},
-		nodes: []opts.TreeData{},
+		nodes: []*opts.TreeData{},
 	}
 	return &l
 }
@@ -38,10 +38,7 @@ func NewBaseListener() *BaseCListener {
 var _ CListener = &BaseCListener{}
 
 // VisitTerminal is called when a terminal node is visited.
-func (s *BaseCListener) VisitTerminal(node antlr.TerminalNode) {
-	//node2 := opts.TreeData{Name: node.GetText()}
-	//s.Root.Children = append(s.Root.Children, &node2)
-}
+func (s *BaseCListener) VisitTerminal(node antlr.TerminalNode) {}
 
 // VisitErrorNode is called when an error node is visited.
 func (s *BaseCListener) VisitErrorNode(node antlr.ErrorNode) {}
@@ -56,7 +53,7 @@ func (s *BaseCListener) ExitEveryRule(ctx antlr.ParserRuleContext) {}
 func (s *BaseCListener) EnterFunction(ctx *FunctionContext) {
 	s.Root = opts.TreeData{Name: fmt.Sprintf("Function: %s", ctx.GetChild(1))}
 	s.current = &s.Root
-	s.nodes = append(s.nodes, s.Root)
+	s.nodes = append(s.nodes, &s.Root)
 }
 
 // ExitFunction is called when production function is exited.
@@ -139,30 +136,47 @@ func (s *BaseCListener) ExitOptionExpression(ctx *OptionExpressionContext) {}
 
 // EnterWhileStatement is called when production whileStatement is entered.
 func (s *BaseCListener) EnterWhileStatement(ctx *WhileStatementContext) {
-	node := opts.TreeData{Name: "For Loop"}
+	node := opts.TreeData{Name: "While Loop"}
 	s.current.Children = append(s.current.Children, &node)
 	s.current = &node
-	s.nodes = append(s.nodes, node)
+	s.nodes = append(s.nodes, &node)
 	//s.Root = node
 }
 
 // ExitWhileStatement is called when production whileStatement is exited.
 func (s *BaseCListener) ExitWhileStatement(ctx *WhileStatementContext) {
 	s.nodes = s.nodes[:len(s.nodes)-1]
-	s.current = &s.nodes[len(s.nodes)-1]
+	s.current = s.nodes[len(s.nodes)-1]
 }
 
 // EnterIfStatement is called when production ifStatement is entered.
-func (s *BaseCListener) EnterIfStatement(ctx *IfStatementContext) {}
+func (s *BaseCListener) EnterIfStatement(ctx *IfStatementContext) {
+	node := opts.TreeData{Name: "IF statement"}
+	s.current.Children = append(s.current.Children, &node)
+	s.current = &node
+	s.nodes = append(s.nodes, &node)
+
+}
 
 // ExitIfStatement is called when production ifStatement is exited.
-func (s *BaseCListener) ExitIfStatement(ctx *IfStatementContext) {}
+func (s *BaseCListener) ExitIfStatement(ctx *IfStatementContext) {
+	s.nodes = s.nodes[:len(s.nodes)-1]
+	s.current = s.nodes[len(s.nodes)-1]
+}
 
 // EnterElseStatement is called when production elseStatement is entered.
-func (s *BaseCListener) EnterElseStatement(ctx *ElseStatementContext) {}
+func (s *BaseCListener) EnterElseStatement(ctx *ElseStatementContext) {
+	node := opts.TreeData{Name: "ELSE part"}
+	s.current.Children = append(s.current.Children, &node)
+	s.current = &node
+	s.nodes = append(s.nodes, &node)
+}
 
 // ExitElseStatement is called when production elseStatement is exited.
-func (s *BaseCListener) ExitElseStatement(ctx *ElseStatementContext) {}
+func (s *BaseCListener) ExitElseStatement(ctx *ElseStatementContext) {
+	s.nodes = s.nodes[:len(s.nodes)-1]
+	s.current = s.nodes[len(s.nodes)-1]
+}
 
 // EnterExpression is called when production expression is entered.
 func (s *BaseCListener) EnterExpression(ctx *ExpressionContext) {}
@@ -172,7 +186,7 @@ func (s *BaseCListener) ExitExpression(ctx *ExpressionContext) {
 	log.Print(ctx.GetText())
 	childs := ctx.GetChildCount()
 	if childs == 3 {
-		md := opts.TreeData{Name: fmt.Sprintf("ASSIGMENT: %s", ctx.GetChild(1))}
+		md := opts.TreeData{Name: fmt.Sprintf("Assigment: %s", ctx.GetChild(1))}
 		left := opts.TreeData{Name: fmt.Sprintf("LValue: %s", ctx.GetChild(0))}
 		right := opts.TreeData{Name: fmt.Sprintf("RValue: %s",
 			ctx.GetChild(2).GetChild(0))}
